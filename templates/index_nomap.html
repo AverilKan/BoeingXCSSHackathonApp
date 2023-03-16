@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pollution Tracker</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Pollution Tracker</h1>
+
+    <form method="POST" action="/" onsubmit="event.preventDefault(); submitForm();">
+        <label for="origin">Origin:</label>
+        <input type="text" id="origin" name="origin" required placeholder="Enter address or postcode">
+        <br>
+        <label for="destination">Destination:</label>
+        <input type="text" id="destination" name="destination" required placeholder="Enter address or postcode">
+        <br>
+        <button type="submit">Calculate</button>
+    </form>
+    <p id="average_air_quality"></p>
+    <p id="loading" style="display: none;">Loading...</p>
+
+    <script>
+        function submitForm() {
+            const origin = $("#origin").val();
+            const destination = $("#destination").val();
+
+            $.ajax({
+                type: "POST",
+                url: "/",
+                data: {
+                    origin: origin,
+                    destination: destination
+                },
+                beforeSend: function() {
+                    $("#loading").show();
+                },
+                complete: function() {
+                    $("#loading").hide();
+                },
+                success: function(response) {
+                    if (response.average_air_quality) {
+                        $("#average_air_quality").text("Average air quality during the commute: " + response.average_air_quality + " AQI");
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pollution Tracker</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBRS1Yn4gqDi8v_I5XlrGf76TPUaXrBoW4&callback=initMap"></script>
+</head>
+<body>
+    <h1>Pollution Tracker</h1>
+    <div id="map" style="width: 100%; height: 400px;"></div>
+    <form method="POST" action="/" onsubmit="event.preventDefault(); submitForm();">
+        <label for="origin">Origin:</label>
+        <input type="text" id="origin" name="origin" required placeholder="Enter address or postcode">
+        <br>
+        <label for="destination">Destination:</label>
+        <input type="text" id="destination" name="destination" required placeholder="Enter address or postcode">
+        <br>
+        <button type="submit">Calculate</button>
+    </form>
+    <p id="average_air_quality"></p>
+    <p id="loading" style="display: none;">Loading...</p>
+
+    <script>
+        let map;
+        let directionsService;
+        let directionsRenderer;
+
+        function initMap() {
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer();
+
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: 51.5074, lng: -0.1278 }, // You can change the initial center coordinates
+                zoom: 10
+            });
+
+            directionsRenderer.setMap(map);
+        }
+
+        function displayRoute(origin, destination, waypoints) {
+            const request = {
+                origin: origin,
+                destination: destination,
+                travelMode: 'WALKING',
+                waypoints: waypoints.map((point) => {
+                    return {
+                        location: new google.maps.LatLng(point.location[0], point.location[1]),
+                        stopover: false,
+                    };
+                }),
+                optimizeWaypoints: false,
+            };
+
+            directionsService.route(request, (result, status) => {
+                if (status == 'OK') {
+                    directionsRenderer.setDirections(result);
+                } else {
+                    console.error("Error displaying route:", status);
+                }
+            });
+        }
+
+
+
+
+        function submitForm() {
+            const origin = $("#origin").val();
+            const destination = $("#destination").val();
+
+            $.ajax({
+                url: "/",
+                method: "POST",
+                data: {
+                    origin: origin,
+                    destination: destination,
+                },
+                beforeSend: function () {
+                    $("#loading").show();
+                },
+                complete: function () {
+                    $("#loading").hide();
+                },
+                success: function(response) {
+                    console.log("Response:", response); 
+                    const data = response;
+                    if (data.average_air_quality) {
+                        $("#average_air_quality").text("Average air quality during the commute: " + data.average_air_quality + " AQI");
+                    }
+                    displayRoute(origin, destination, data.waypoints);
+                },
+
+                error: function (error) {
+                    console.log(error);
+                    $("#average_air_quality").text("An error occurred.");
+                },
+            });
+        }
+    </script>
+</body>
+</html>
